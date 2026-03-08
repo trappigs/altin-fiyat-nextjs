@@ -12,23 +12,30 @@ export default function AltinFiyatlar() {
 
   const fetchData = async () => {
     try {
+      console.log('=== Frontend: fetchData başladı ===');
+
       const savedSettings = localStorage.getItem('adminSettings');
       let body: any = {};
 
       if (savedSettings) {
         try {
           body = JSON.parse(savedSettings);
+          console.log('Frontend: Ayarlar yüklendi:', body);
           setAdminSettings(body);
         } catch (e) {
           console.error('Ayarlar yüklenemedi:', e);
         }
       }
 
+      console.log('Frontend: API isteği gönderiliyor...');
+
       const response = await fetch('/api/altin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
+
+      console.log('Frontend: API response status:', response.status);
 
       if (!response.ok) {
         console.error('API response not OK:', response.status);
@@ -39,15 +46,19 @@ export default function AltinFiyatlar() {
 
       const result: ApiResponse = await response.json();
 
+      console.log('Frontend: API response:', result);
+
       if (result.success && result.data) {
+        console.log('Frontend: Veri güncellendi, ürün sayısı:', result.data.length);
+        console.log('Frontend: İlk ürün:', result.data[0]);
         setData(result.data);
         setKaynak(result.kaynak);
         setSonGuncelleme(result.sonGuncelleme);
       } else {
-        console.error('API success false:', result);
+        console.error('Frontend: API success false veya data boş:', result);
       }
     } catch (error) {
-      console.error('Veri çekerken hata:', error);
+      console.error('Frontend: Veri çekerken hata:', error);
     } finally {
       setLoading(false);
     }
@@ -63,12 +74,15 @@ export default function AltinFiyatlar() {
 
   const formatPrice = (value: number | null | undefined): string => {
     if (value === null || value === undefined || isNaN(value)) {
+      console.log('Frontend: formatPrice - Invalid value:', value);
       return '0.00';
     }
-    return value.toLocaleString('en-US', {
+    const formatted = value.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
+    console.log('Frontend: formatPrice -', value, '->', formatted);
+    return formatted;
   };
 
   return (
@@ -111,7 +125,7 @@ export default function AltinFiyatlar() {
 
             {loading ? (
               <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-transparent" style={{ borderColor: 'rgba(255, 255, 255, 0.3)', borderTopColor: 'transparent' }}></div>
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-transparent" style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'transparent' }}></div>
                 <p className="mt-4 text-lg">Yükleniyor...</p>
               </div>
             ) : data.length === 0 ? (
