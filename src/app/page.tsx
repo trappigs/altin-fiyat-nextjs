@@ -12,7 +12,6 @@ export default function AltinFiyatlar() {
 
   const fetchData = async () => {
     try {
-      // Admin ayarlarını localStorage'dan al
       const savedSettings = localStorage.getItem('adminSettings');
       let body: any = {};
 
@@ -28,8 +27,15 @@ export default function AltinFiyatlar() {
       const response = await fetch('/api/altin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: Object.keys(body).length > 0 ? JSON.stringify(body) : null
+        body: JSON.stringify(body)
       });
+
+      if (!response.ok) {
+        console.error('API response not OK:', response.status);
+        const errorText = await response.text();
+        console.error('API error text:', errorText);
+        return;
+      }
 
       const result: ApiResponse = await response.json();
 
@@ -37,6 +43,8 @@ export default function AltinFiyatlar() {
         setData(result.data);
         setKaynak(result.kaynak);
         setSonGuncelleme(result.sonGuncelleme);
+      } else {
+        console.error('API success false:', result);
       }
     } catch (error) {
       console.error('Veri çekerken hata:', error);
@@ -48,16 +56,14 @@ export default function AltinFiyatlar() {
   useEffect(() => {
     fetchData();
 
-    // Her 2 saniyede bir güncelle (sadece veriyi, tüm tabloyu değil)
     const interval = setInterval(fetchData, 2000);
 
     return () => clearInterval(interval);
-  }, []); // Boş dependency array - sadece ilk mount'ta çalışır
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-600 to-blue-500 p-4">
       <div className="container mx-auto max-w-7xl py-4">
-        {/* Header */}
         <div className="text-end mb-3">
           <a
             href="/admin"
@@ -72,12 +78,10 @@ export default function AltinFiyatlar() {
           </a>
         </div>
 
-        {/* Logo */}
         <div className="text-center mb-4">
           <h1 className="font-bold mb-2" style={{ fontSize: '2.5rem' }}>Ahmet Hatay Kuyumculuk</h1>
         </div>
 
-        {/* Card */}
         <div className="rounded-xl overflow-hidden" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(10px)' }}>
           <div className="p-4 rounded-t-lg" style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
             <h2 className="text-center font-semibold text-white text-2xl">
@@ -86,7 +90,6 @@ export default function AltinFiyatlar() {
           </div>
 
           <div className="p-4">
-            {/* Son Güncellenme Zamanı ve Kaynak */}
             <div className="text-end mb-2">
               <small className="text-white">
                 <strong>Kaynak:</strong>{' '}
@@ -96,7 +99,6 @@ export default function AltinFiyatlar() {
               </small>
             </div>
 
-            {/* Tablo */}
             {loading ? (
               <div className="text-center py-12">
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-transparent" style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'transparent' }}></div>
@@ -124,12 +126,9 @@ export default function AltinFiyatlar() {
                           backgroundColor: index % 2 === 0 ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.15)'
                         }}
                       >
-                        {/* Cinsi sütunu */}
                         <td className="py-3 px-4 text-center" style={{ color: 'black', fontWeight: '600' }}>
                           {item.cinsi}
                         </td>
-
-                        {/* Alış fiyatları - sırayla kırmızı/beyaz */}
                         <td
                           className="py-3 px-4 text-center font-medium"
                           style={{
@@ -141,8 +140,6 @@ export default function AltinFiyatlar() {
                             maximumFractionDigits: 2
                           })}
                         </td>
-
-                        {/* Satış fiyatları - sırayla yeşil/beyaz */}
                         <td
                           className="py-3 px-4 text-center font-medium"
                           style={{
@@ -166,10 +163,10 @@ export default function AltinFiyatlar() {
                   }
                   .table-bordered th,
                   .table-bordered td {
-                    border:1px solid rgba(255, 255, 255, 0.2);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
                   }
                   .table-hover tr:hover {
-                    background-color: rgba(255,255,255,0.2) !important;
+                    background-color: rgba(255, 255, 255, 0.2) !important;
                   }
                 `}</style>
               </div>
@@ -177,8 +174,7 @@ export default function AltinFiyatlar() {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="text-center mt-4 text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>
+        <div className="text-center mt-4 text-sm" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
           <p>Canlı Altın & Döviz Fiyatları</p>
         </div>
       </div>

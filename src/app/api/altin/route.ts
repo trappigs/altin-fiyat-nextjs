@@ -427,6 +427,7 @@ export async function GET(request: Request) {
     return NextResponse.json(response);
   } catch (error) {
     console.error('API Hatası:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
 
     const errorResponse: ApiResponse = {
       data: [],
@@ -449,10 +450,11 @@ export async function POST(request: Request) {
       body = await request.json();
       console.log('Request body:', body);
     } catch (e) {
-      console.log('Body yok veya parse hatası, varsayılan kullanılıyor');
+      console.log('Body parse edilemedi, varsayılan kullanılıyor:', e);
+      body = DEFAULT_CARPANLAR;
     }
 
-    const carpanlar = body || DEFAULT_CARPANLAR;
+    const carpanlar = body;
 
     const now = Date.now();
 
@@ -524,6 +526,8 @@ export async function POST(request: Request) {
     };
 
     console.log('=== API POST isteği tamamlandı ===');
+    console.log('Kaynak:', veriKaynagi);
+    console.log('Ürün sayısı:', urunListesi.length);
 
     const response: ApiResponse = {
       data: urunListesi,
@@ -535,6 +539,7 @@ export async function POST(request: Request) {
     return NextResponse.json(response);
   } catch (error) {
     console.error('API Hatası:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
 
     const errorResponse: ApiResponse = {
       data: [],
