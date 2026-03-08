@@ -10,8 +10,8 @@ let cache: {
   lastUpdate: number;
 } | null = null;
 
-// Carpanlar (appsettings.json'dan kopyaladık)
-const CARPANLAR = {
+// Default Carpanlar
+const DEFAULT_CARPANLAR = {
   hasAltinAlisFarki: -200,
   hasAltinSatisFarki: 200,
   gramAltinAlisCarpani: 5,
@@ -66,18 +66,15 @@ async function getHaremData() {
     let sarSatis = 0;
     let apiTarih: string | null = null;
 
-    // Tarih
     if (root.meta?.tarih) {
       apiTarih = root.meta.tarih.replace(/-/g, '.');
     }
 
-    // Has Altın
     if (root.data['ALTIN']) {
       hasAltinAlis = parseFloat(root.data['ALTIN'].alis) || 0;
       hasAltinSatis = parseFloat(root.data['ALTIN'].satis) || 0;
     }
 
-    // Dövizler
     if (root.data['USDTRY']) {
       usdAlis = parseFloat(root.data['USDTRY'].alis) || 0;
       usdSatis = parseFloat(root.data['USDTRY'].satis) || 0;
@@ -132,13 +129,11 @@ async function getSaglamogluData() {
     let sarSatis = 0;
     let apiTarih: string | null = null;
 
-    // Has Altın (id: 0)
     const hasAltinItem = root.data.find(x => x.id === 0);
     if (hasAltinItem) {
       hasAltinAlis = hasAltinItem.customerBuysAt;
       hasAltinSatis = hasAltinItem.customerSellsAt;
 
-      // Tarih formatla
       if (hasAltinItem.updatedAt) {
         const dt = new Date(hasAltinItem.updatedAt);
         apiTarih = dt.toLocaleString('tr-TR', {
@@ -151,21 +146,18 @@ async function getSaglamogluData() {
       }
     }
 
-    // USD/TL (id: 8)
     const usdItem = root.data.find(x => x.id === 8);
     if (usdItem) {
       usdAlis = usdItem.customerBuysAt;
       usdSatis = usdItem.customerSellsAt;
     }
 
-    // EUR/TL (id: 9)
     const eurItem = root.data.find(x => x.id === 9);
     if (eurItem) {
       eurAlis = eurItem.customerBuysAt;
       eurSatis = eurItem.customerSellsAt;
     }
 
-    // SAR/TL (id: 15)
     const sarItem = root.data.find(x => x.id === 15);
     if (sarItem) {
       sarAlis = sarItem.customerBuysAt;
@@ -189,13 +181,6 @@ async function getSaglamogluData() {
   }
 }
 
-// Helper: Double Parse
-function parseDouble(val: string): number {
-  if (!val) return 0;
-  const parsed = parseFloat(val.replace(',', '.'));
-  return isNaN(parsed) ? 0 : parsed;
-}
-
 // Helper: Verileri Hesapla ve Listeyi Oluştur
 function hesaplaVeListele(
   hasAltinAlis: number,
@@ -205,119 +190,106 @@ function hesaplaVeListele(
   eurAlis: number,
   eurSatis: number,
   sarAlis: number,
-  sarSatis: number
+  sarSatis: number,
+  carpanlar: any = DEFAULT_CARPANLAR
 ): SatilacakAltin[] {
   const urunListesi: SatilacakAltin[] = [];
 
-  // Has Altın farkı ekle
-  hasAltinAlis = hasAltinAlis + CARPANLAR.hasAltinAlisFarki;
-  hasAltinSatis = hasAltinSatis + CARPANLAR.hasAltinSatisFarki;
+  const c = carpanlar;
 
-  // USD/TL
+  hasAltinAlis = hasAltinAlis + c.hasAltinAlisFarki;
+  hasAltinSatis = hasAltinSatis + c.hasAltinSatisFarki;
+
   urunListesi.push({
     cinsi: 'USD/TL',
-    alisFiyati: usdAlis > 0 ? usdAlis - CARPANLAR.dolarAlisEksi : 0,
-    satisFiyati: usdSatis > 0 ? usdSatis + CARPANLAR.dolarSatisArti : 0
+    alisFiyati: usdAlis > 0 ? usdAlis - c.dolarAlisEksi : 0,
+    satisFiyati: usdSatis > 0 ? usdSatis + c.dolarSatisArti : 0
   });
 
-  // EUR/TL
   urunListesi.push({
     cinsi: 'EUR/TL',
-    alisFiyati: eurAlis > 0 ? eurAlis - CARPANLAR.euroAlisEksi : 0,
-    satisFiyati: eurSatis > 0 ? eurSatis + CARPANLAR.euroSatisArti : 0
+    alisFiyati: eurAlis > 0 ? eurAlis - c.euroAlisEksi : 0,
+    satisFiyati: eurSatis > 0 ? eurSatis + c.euroSatisArti : 0
   });
 
-  // EUR/USD
-  const eurUsdAlis = usdAlis > 0 ? (eurAlis - CARPANLAR.euroAlisEksi) / (usdAlis - CARPANLAR.dolarAlisEksi) : 0;
-  const eurUsdSatis = usdSatis > 0 ? (eurSatis + CARPANLAR.euroSatisArti) / (usdSatis + CARPANLAR.dolarSatisArti) : 0;
+  const eurUsdAlis = usdAlis > 0 ? (eurAlis - c.euroAlisEksi) / (usdAlis - c.dolarAlisEksi) : 0;
+  const eurUsdSatis = usdSatis > 0 ? (eurSatis + c.euroSatisArti) / (usdSatis + c.dolarSatisArti) : 0;
   urunListesi.push({
     cinsi: 'EUR/USD',
     alisFiyati: eurUsdAlis,
     satisFiyati: eurUsdSatis
   });
 
-  // SAR/TL
   urunListesi.push({
     cinsi: 'SAR/TL',
-    alisFiyati: sarAlis > 0 ? sarAlis - CARPANLAR.suudiAlisEksi : 0,
-    satisFiyati: sarSatis > 0 ? sarSatis + CARPANLAR.suudiSatisArti : 0
+    alisFiyati: sarAlis > 0 ? sarAlis - c.suudiAlisEksi : 0,
+    satisFiyati: sarSatis > 0 ? sarSatis + c.suudiSatisArti : 0
   });
 
-  // Has Altın
   urunListesi.push({
     cinsi: 'Has Altın',
     alisFiyati: hasAltinAlis,
     satisFiyati: hasAltinSatis
   });
 
-  // 24 Ayar (Gram)
   urunListesi.push({
     cinsi: '24 Ayar',
-    alisFiyati: hasAltinAlis * CARPANLAR.gramAltinAlisCarpani,
-    satisFiyati: hasAltinSatis * CARPANLAR.gramAltinSatisCarpani
+    alisFiyati: hasAltinAlis * c.gramAltinAlisCarpani,
+    satisFiyati: hasAltinSatis * c.gramAltinSatisCarpani
   });
 
-  // 22 Ayar
   urunListesi.push({
     cinsi: '22 Ayar',
-    alisFiyati: hasAltinAlis * CARPANLAR.ayar22AlisCarpani,
-    satisFiyati: hasAltinSatis * CARPANLAR.ayar22SatisCarpani
+    alisFiyati: hasAltinAlis * c.ayar22AlisCarpani,
+    satisFiyati: hasAltinSatis * c.ayar22SatisCarpani
   });
 
-  // 21 Ayar
   urunListesi.push({
     cinsi: '21 Ayar',
-    alisFiyati: hasAltinAlis * CARPANLAR.ayar21AlisCarpani,
-    satisFiyati: hasAltinSatis * CARPANLAR.ayar21SatisCarpani
+    alisFiyati: hasAltinAlis * c.ayar21AlisCarpani,
+    satisFiyati: hasAltinSatis * c.ayar21SatisCarpani
   });
 
-  // 14 Ayar
   urunListesi.push({
     cinsi: '14 Ayar',
-    alisFiyati: hasAltinAlis * CARPANLAR.ayar14AlisCarpani,
-    satisFiyati: hasAltinSatis * CARPANLAR.ayar14SatisCarpani
+    alisFiyati: hasAltinAlis * c.ayar14AlisCarpani,
+    satisFiyati: hasAltinSatis * c.ayar14SatisCarpani
   });
 
-  // Çeyrek
   urunListesi.push({
     cinsi: 'Çeyrek',
-    alisFiyati: hasAltinAlis * CARPANLAR.ziynetCeyrekAlisCarpani,
-    satisFiyati: hasAltinSatis * CARPANLAR.ziynetCeyrekSatisCarpani
+    alisFiyati: hasAltinAlis * c.ziynetCeyrekAlisCarpani,
+    satisFiyati: hasAltinSatis * c.ziynetCeyrekSatisCarpani
   });
 
-  // Yarım
   urunListesi.push({
     cinsi: 'Yarım',
-    alisFiyati: hasAltinAlis * CARPANLAR.ziynetYarimAlisCarpani,
-    satisFiyati: hasAltinSatis * CARPANLAR.ziynetYarimSatisCarpani
+    alisFiyati: hasAltinAlis * c.ziynetYarimAlisCarpani,
+    satisFiyati: hasAltinSatis * c.ziynetYarimSatisCarpani
   });
 
-  // Tam
   urunListesi.push({
     cinsi: 'Tam',
-    alisFiyati: hasAltinAlis * CARPANLAR.ziynetTamAlisCarpani,
-    satisFiyati: hasAltinSatis * CARPANLAR.ziynetTamSatisCarpani
+    alisFiyati: hasAltinAlis * c.ziynetTamAlisCarpani,
+    satisFiyati: hasAltinSatis * c.ziynetTamSatisCarpani
   });
 
-  // ATA Çeyrek
   urunListesi.push({
     cinsi: 'ATA Çeyrek',
-    alisFiyati: hasAltinAlis * CARPANLAR.ataCeyrekAlisCarpani,
-    satisFiyati: hasAltinSatis * CARPANLAR.ataCeyrekSatisCarpani
+    alisFiyati: hasAltinAlis * c.ataCeyrekAlisCarpani,
+    satisFiyati: hasAltinSatis * c.ataCeyrekSatisCarpani
   });
 
-  // ATA Yarım
   urunListesi.push({
     cinsi: 'ATA Yarım',
-    alisFiyati: hasAltinAlis * CARPANLAR.ataYarimAlisCarpani,
-    satisFiyati: hasAltinSatis * CARPANLAR.ataYarimSatisCarpani
+    alisFiyati: hasAltinAlis * c.ataYarimAlisCarpani,
+    satisFiyati: hasAltinSatis * c.ataYarimSatisCarpani
   });
 
-  // ATA Tam
   urunListesi.push({
     cinsi: 'ATA Tam',
-    alisFiyati: hasAltinAlis * CARPANLAR.ataTamAlisCarpani,
-    satisFiyati: hasAltinSatis * CARPANLAR.ataTamSatisCarpani
+    alisFiyati: hasAltinAlis * c.ataTamAlisCarpani,
+    satisFiyati: hasAltinSatis * c.ataTamSatisCarpani
   });
 
   return urunListesi;
@@ -325,7 +297,6 @@ function hesaplaVeListele(
 
 export async function GET(request: Request) {
   try {
-    // Cache kontrol
     const now = Date.now();
     if (cache && (now - cache.lastUpdate) < CACHE_DURATION) {
       return NextResponse.json({
@@ -335,6 +306,8 @@ export async function GET(request: Request) {
         success: true
       } as ApiResponse);
     }
+
+    const haremData = await getHaremData();
 
     let hasAltinAlis = 0;
     let hasAltinSatis = 0;
@@ -347,8 +320,6 @@ export async function GET(request: Request) {
     let apiTarih: string | null = null;
     let veriKaynagi = '';
 
-    // 1. Harem Altın dene
-    const haremData = await getHaremData();
     if (haremData && haremData.hasAltinAlis > 0) {
       hasAltinAlis = haremData.hasAltinAlis;
       hasAltinSatis = haremData.hasAltinSatis;
@@ -362,7 +333,6 @@ export async function GET(request: Request) {
       veriKaynagi = 'Harem Altın';
     }
 
-    // 2. Sağlamoğlu Altın dene (Eğer Harem başarısızsa)
     if (hasAltinAlis === 0) {
       const saglamogluData = await getSaglamogluData();
       if (saglamogluData && saglamogluData.hasAltinAlis > 0) {
@@ -379,12 +349,10 @@ export async function GET(request: Request) {
       }
     }
 
-    // Eğer her ikisi de başarısızsa
     if (hasAltinAlis === 0) {
       veriKaynagi = 'Veri Alınamadı';
     }
 
-    // Verileri hesapla
     const urunListesi = hesaplaVeListele(
       hasAltinAlis,
       hasAltinSatis,
@@ -393,17 +361,109 @@ export async function GET(request: Request) {
       eurAlis,
       eurSatis,
       sarAlis,
-      sarSatis
+      sarSatis,
+      DEFAULT_CARPANLAR
     );
 
-    // Cache'e yaz
     cache = {
       data: urunListesi,
       source: veriKaynagi,
       lastUpdate: now
     };
 
-    // Response
+    const response: ApiResponse = {
+      data: urunListesi,
+      kaynak: veriKaynagi,
+      sonGuncelleme: apiTarih || new Date().toLocaleString('tr-TR'),
+      success: hasAltinAlis > 0
+    };
+
+    return NextResponse.json(response);
+  } catch (error) {
+    console.error('API Hatası:', error);
+
+    const errorResponse: ApiResponse = {
+      data: [],
+      kaynak: 'Hata',
+      sonGuncelleme: 'Hata oluştu',
+      success: false
+    };
+
+    return NextResponse.json(errorResponse, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const carpanlar = body || DEFAULT_CARPANLAR;
+
+    const now = Date.now();
+
+    const haremData = await getHaremData();
+
+    let hasAltinAlis = 0;
+    let hasAltinSatis = 0;
+    let usdAlis = 0;
+    let usdSatis = 0;
+    let eurAlis = 0;
+    let eurSatis = 0;
+    let sarAlis = 0;
+    let sarSatis = 0;
+    let apiTarih: string | null = null;
+    let veriKaynagi = '';
+
+    if (haremData && haremData.hasAltinAlis > 0) {
+      hasAltinAlis = haremData.hasAltinAlis;
+      hasAltinSatis = haremData.hasAltinSatis;
+      usdAlis = haremData.usdAlis;
+      usdSatis = haremData.usdSatis;
+      eurAlis = haremData.eurAlis;
+      eurSatis = haremData.eurSatis;
+      sarAlis = haremData.sarAlis;
+      sarSatis = haremData.sarSatis;
+      apiTarih = haremData.tarih;
+      veriKaynagi = 'Harem Altın';
+    }
+
+    if (hasAltinAlis === 0) {
+      const saglamogluData = await getSaglamogluData();
+      if (saglamogluData && saglamogluData.hasAltinAlis > 0) {
+        hasAltinAlis = saglamogluData.hasAltinAlis;
+        hasAltinSatis = saglamogluData.hasAltinSatis;
+        usdAlis = saglamogluData.usdAlis;
+        usdSatis = saglamogluData.usdSatis;
+        eurAlis = saglamogluData.eurAlis;
+        eurSatis = saglamogluData.eurSatis;
+        sarAlis = saglamogluData.sarAlis;
+        sarSatis = saglamogluData.sarSatis;
+        apiTarih = saglamogluData.tarih;
+        veriKaynagi = 'Sağlamoğlu Altın';
+      }
+    }
+
+    if (hasAltinAlis === 0) {
+      veriKaynagi = 'Veri Alınamadı';
+    }
+
+    const urunListesi = hesaplaVeListele(
+      hasAltinAlis,
+      hasAltinSatis,
+      usdAlis,
+      usdSatis,
+      eurAlis,
+      eurSatis,
+      sarAlis,
+      sarSatis,
+      carpanlar
+    );
+
+    cache = {
+      data: urunListesi,
+      source: veriKaynagi,
+      lastUpdate: now
+    };
+
     const response: ApiResponse = {
       data: urunListesi,
       kaynak: veriKaynagi,

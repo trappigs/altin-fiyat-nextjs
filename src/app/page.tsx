@@ -8,10 +8,29 @@ export default function AltinFiyatlar() {
   const [kaynak, setKaynak] = useState<string>('');
   const [sonGuncelleme, setSonGuncelleme] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
+  const [adminSettings, setAdminSettings] = useState<any>(null);
 
   const fetchData = async () => {
     try {
-      const response = await fetch('/api/altin');
+      // Admin ayarlarını localStorage'dan al
+      const savedSettings = localStorage.getItem('adminSettings');
+      let body: any = {};
+
+      if (savedSettings) {
+        try {
+          body = JSON.parse(savedSettings);
+          setAdminSettings(body);
+        } catch (e) {
+          console.error('Ayarlar yüklenemedi:', e);
+        }
+      }
+
+      const response = await fetch('/api/altin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: Object.keys(body).length > 0 ? JSON.stringify(body) : null
+      });
+
       const result: ApiResponse = await response.json();
 
       if (result.success && result.data) {
@@ -41,9 +60,7 @@ export default function AltinFiyatlar() {
         {/* Header */}
         <div className="text-end mb-3">
           <a
-            href="https://github.com/trappigs/altinFiyatlarWebSitesi"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/admin"
             className="inline-block px-5 py-2 font-bold rounded-lg hover:opacity-90 transition-opacity"
             style={{
               background: 'linear-gradient(45deg, #f1c15b, #d4a142)',
@@ -149,10 +166,10 @@ export default function AltinFiyatlar() {
                   }
                   .table-bordered th,
                   .table-bordered td {
-                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    border:1px solid rgba(255, 255, 255, 0.2);
                   }
                   .table-hover tr:hover {
-                    background-color: rgba(255, 255, 255, 0.2) !important;
+                    background-color: rgba(255,255,255,0.2) !important;
                   }
                 `}</style>
               </div>
@@ -161,7 +178,7 @@ export default function AltinFiyatlar() {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-4 text-sm" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+        <div className="text-center mt-4 text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>
           <p>Canlı Altın & Döviz Fiyatları</p>
         </div>
       </div>
