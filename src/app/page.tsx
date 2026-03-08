@@ -11,7 +11,6 @@ export default function AltinFiyatlar() {
 
   const fetchData = async () => {
     try {
-      setLoading(true);
       const response = await fetch('/api/altin');
       const result: ApiResponse = await response.json();
 
@@ -30,52 +29,60 @@ export default function AltinFiyatlar() {
   useEffect(() => {
     fetchData();
 
+    // Her 2 saniyede bir güncelle (sadece veriyi, tüm tabloyu değil)
     const interval = setInterval(fetchData, 2000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, []); // Boş dependency array - sadece ilk mount'ta çalışır
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-500 text-white p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-right mb-4">
+    <div className="min-h-screen bg-gradient-to-b from-purple-600 to-blue-500 p-4">
+      <div className="container mx-auto max-w-7xl py-4">
+        {/* Header */}
+        <div className="text-end mb-3">
           <a
             href="https://github.com/trappigs/altinFiyatlarWebSitesi"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block px-6 py-2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold rounded-lg hover:opacity-90 transition-opacity"
+            className="inline-block px-5 py-2 font-bold rounded-lg hover:opacity-90 transition-opacity"
+            style={{
+              background: 'linear-gradient(45deg, #f1c15b, #d4a142)',
+              border: 'none',
+              color: '#000'
+            }}
           >
-            GitHub
+            Yönetim Paneli
           </a>
         </div>
 
-        <div className="text-center mb-6">
-          <h1 className="text-4xl font-bold mb-2">Ahmet Hatay Kuyumculuk</h1>
-          <p className="text-xl">Altın & Döviz Fiyatları</p>
+        {/* Logo */}
+        <div className="text-center mb-4">
+          <h1 className="font-bold mb-2" style={{ fontSize: '2.5rem' }}>Ahmet Hatay Kuyumculuk</h1>
         </div>
 
-        <div className="text-right mb-4 text-sm">
-          <span className="mr-4">
-            <strong className="text-yellow-300">Kaynak:</strong>{' '}
-            <span className="text-yellow-300">{kaynak}</span>
-          </span>
-          <span>
-            <strong className="text-yellow-300">Son Güncelleme:</strong>{' '}
-            <span className="text-yellow-300">{sonGuncelleme}</span>
-          </span>
-        </div>
-
-        <div className="bg-white/10 backdrop-blur-lg rounded-xl overflow-hidden">
-          <div className="bg-black/40 p-4">
-            <h2 className="text-center text-xl font-semibold">
+        {/* Card */}
+        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(10px)' }}>
+          <div className="p-4 rounded-t-lg" style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
+            <h2 className="text-center font-semibold text-white text-2xl">
               Altın & Döviz Fiyatları
             </h2>
           </div>
 
           <div className="p-4">
+            {/* Son Güncellenme Zamanı ve Kaynak */}
+            <div className="text-end mb-2">
+              <small className="text-white">
+                <strong>Kaynak:</strong>{' '}
+                <span className="text-yellow-400" style={{ marginRight: '15px' }}>{kaynak}</span>
+                <strong>Son Güncellenme:</strong>{' '}
+                <span className="text-yellow-400">{sonGuncelleme}</span>
+              </small>
+            </div>
+
+            {/* Tablo */}
             {loading ? (
               <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent"></div>
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-transparent" style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'transparent' }}></div>
                 <p className="mt-4 text-lg">Yükleniyor...</p>
               </div>
             ) : data.length === 0 ? (
@@ -84,41 +91,48 @@ export default function AltinFiyatlar() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full table-bordered table-striped table-hover align-middle">
                   <thead>
-                    <tr className="border-b border-white/20">
-                      <th className="py-3 px-4 text-left font-semibold">Cinsi</th>
-                      <th className="py-3 px-4 text-right font-semibold">Alış Fiyatı</th>
-                      <th className="py-3 px-4 text-right font-semibold">Satış Fiyatı</th>
+                    <tr style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
+                      <th scope="col" className="text-white text-center py-3 px-4" style={{ minWidth: '150px' }}>Cinsi</th>
+                      <th scope="col" className="text-white text-center py-3 px-4" style={{ minWidth: '150px' }}>Alış Fiyatı</th>
+                      <th scope="col" className="text-white text-center py-3 px-4" style={{ minWidth: '150px' }}>Satış Fiyatı</th>
                     </tr>
                   </thead>
                   <tbody>
                     {data.map((item, index) => (
                       <tr
                         key={index}
-                        className={`border-b border-white/10 ${
-                          index % 2 === 0 ? 'bg-white/5' : 'bg-white/15'
-                        } hover:bg-white/20 transition-colors`}
+                        style={{
+                          backgroundColor: index % 2 === 0 ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.15)'
+                        }}
                       >
-                        <td className="py-3 px-4 font-semibold text-black">
+                        {/* Cinsi sütunu */}
+                        <td className="py-3 px-4 text-center" style={{ color: 'black', fontWeight: '600' }}>
                           {item.cinsi}
                         </td>
+
+                        {/* Alış fiyatları - sırayla kırmızı/beyaz */}
                         <td
-                          className={`py-3 px-4 text-right font-medium ${
-                            index % 2 === 0 ? 'text-red-400' : 'text-white'
-                          }`}
+                          className="py-3 px-4 text-center font-medium"
+                          style={{
+                            color: index % 2 === 0 ? 'red' : 'white'
+                          }}
                         >
-                          {item.alisFiyati.toLocaleString('tr-TR', {
+                          {item.alisFiyati.toLocaleString('en-US', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2
                           })}
                         </td>
+
+                        {/* Satış fiyatları - sırayla yeşil/beyaz */}
                         <td
-                          className={`py-3 px-4 text-right font-medium ${
-                            index % 2 === 0 ? 'text-green-400' : 'text-white'
-                          }`}
+                          className="py-3 px-4 text-center font-medium"
+                          style={{
+                            color: index % 2 === 0 ? 'green' : 'white'
+                          }}
                         >
-                          {item.satisFiyati.toLocaleString('tr-TR', {
+                          {item.satisFiyati.toLocaleString('en-US', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2
                           })}
@@ -127,14 +141,28 @@ export default function AltinFiyatlar() {
                     ))}
                   </tbody>
                 </table>
+
+                <style jsx>{`
+                  .table-bordered {
+                    border-collapse: separate;
+                    border-spacing: 0;
+                  }
+                  .table-bordered th,
+                  .table-bordered td {
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                  }
+                  .table-hover tr:hover {
+                    background-color: rgba(255, 255, 255, 0.2) !important;
+                  }
+                `}</style>
               </div>
             )}
           </div>
         </div>
 
-        <div className="text-center mt-6 text-sm text-white/70">
+        {/* Footer */}
+        <div className="text-center mt-4 text-sm" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
           <p>Canlı Altın & Döviz Fiyatları</p>
-          <p>Her 2 saniyede bir güncellenir</p>
         </div>
       </div>
     </div>
