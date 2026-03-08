@@ -61,6 +61,16 @@ export default function AltinFiyatlar() {
     return () => clearInterval(interval);
   }, []);
 
+  const formatPrice = (value: number | null | undefined): string => {
+    if (value === null || value === undefined || isNaN(value)) {
+      return '0.00';
+    }
+    return value.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-600 to-blue-500 p-4">
       <div className="container mx-auto max-w-7xl py-4">
@@ -101,7 +111,7 @@ export default function AltinFiyatlar() {
 
             {loading ? (
               <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-transparent" style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'transparent' }}></div>
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-transparent" style={{ borderColor: 'rgba(255, 255, 255, 0.3)', borderTopColor: 'transparent' }}></div>
                 <p className="mt-4 text-lg">Yükleniyor...</p>
               </div>
             ) : data.length === 0 ? (
@@ -127,7 +137,7 @@ export default function AltinFiyatlar() {
                         }}
                       >
                         <td className="py-3 px-4 text-center" style={{ color: 'black', fontWeight: '600' }}>
-                          {item.cinsi}
+                          {item.cinsi || ''}
                         </td>
                         <td
                           className="py-3 px-4 text-center font-medium"
@@ -135,10 +145,7 @@ export default function AltinFiyatlar() {
                             color: index % 2 === 0 ? 'red' : 'white'
                           }}
                         >
-                          {item.alisFiyati.toLocaleString('en-US', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                          })}
+                          {formatPrice(item.alisFiyati)}
                         </td>
                         <td
                           className="py-3 px-4 text-center font-medium"
@@ -146,10 +153,7 @@ export default function AltinFiyatlar() {
                             color: index % 2 === 0 ? 'green' : 'white'
                           }}
                         >
-                          {item.satisFiyati.toLocaleString('en-US', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                          })}
+                          {formatPrice(item.satisFiyati)}
                         </td>
                       </tr>
                     ))}
