@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ApiResponse, HaremRoot, SaglamogluResponse, SatilacakAltin } from '@/types/api';
 
-// Cache için (30 saniye)
 const CACHE_DURATION = 30000;
 
 let cache: {
@@ -10,7 +9,6 @@ let cache: {
   lastUpdate: number;
 } | null = null;
 
-// Default Carpanlar
 const DEFAULT_CARPANLAR = {
   hasAltinAlisFarki: -200,
   hasAltinSatisFarki: 200,
@@ -42,19 +40,29 @@ const DEFAULT_CARPANLAR = {
   suudiSatisArti: 0.20,
 };
 
-// Helper: Harem Verisi Çek
 async function getHaremData() {
   try {
+    console.log('Harem API istek gönderiliyor...');
     const response = await fetch('https://canlipiyasalar.haremaltin.com/tmp/doviz.json?dil_kodu=tr', {
       headers: { 'User-Agent': 'Mozilla/5.0' },
       next: { revalidate: 0 }
     });
 
-    if (!response.ok) return null;
+    console.log('Harem API status:', response.status);
+
+    if (!response.ok) {
+      console.error('Harem API response not OK:', response.status);
+      return null;
+    }
 
     const root: HaremRoot = await response.json();
 
-    if (!root?.data) return null;
+    console.log('Harem API data keys:', Object.keys(root?.data || {}));
+
+    if (!root?.data) {
+      console.error('Harem API data is null');
+      return null;
+    }
 
     let hasAltinAlis = 0;
     let hasAltinSatis = 0;
@@ -70,22 +78,30 @@ async function getHaremData() {
       apiTarih = root.meta.tarih.replace(/-/g, '.');
     }
 
+    console.log('Harem API tarih:', apiTarih);
+
     if (root.data['ALTIN']) {
       hasAltinAlis = parseFloat(root.data['ALTIN'].alis) || 0;
       hasAltinSatis = parseFloat(root.data['ALTIN'].satis) || 0;
+      console.log('Has Altın:', { hasAltinAlis, hasAltinSatis });
     }
 
     if (root.data['USDTRY']) {
       usdAlis = parseFloat(root.data['USDTRY'].alis) || 0;
       usdSatis = parseFloat(root.data['USDTRY'].satis) || 0;
+      console.log('USD:', { usdAlis, usdSatis });
     }
+
     if (root.data['EURTRY']) {
       eurAlis = parseFloat(root.data['EURTRY'].alis) || 0;
       eurSatis = parseFloat(root.data['EURTRY'].satis) || 0;
+      console.log('EUR:', { eurAlis, eurSatis });
     }
+
     if (root.data['SARTRY']) {
       sarAlis = parseFloat(root.data['SARTRY'].alis) || 0;
       sarSatis = parseFloat(root.data['SARTRY'].satis) || 0;
+      console.log('SAR:', { sarAlis, sarSatis });
     }
 
     return {
@@ -105,19 +121,29 @@ async function getHaremData() {
   }
 }
 
-// Helper: Sağlamoğlu Verisi Çek
 async function getSaglamogluData() {
   try {
+    console.log('Sağlamoğlu API istek gönderiliyor...');
     const response = await fetch('https://prdprc.saglamoglu.app/api/v1/prices/currentmarketproductprices', {
       headers: { 'User-Agent': 'Mozilla/5.0' },
       next: { revalidate: 0 }
     });
 
-    if (!response.ok) return null;
+    console.log('Sağlamoğlu API status:', response.status);
+
+    if (!response.ok) {
+      console.error('Sağlamoğlu API response not OK:', response.status);
+      return null;
+    }
 
     const root: SaglamogluResponse = await response.json();
 
-    if (!root?.data) return null;
+    console.log('Sağlamoğlu API data length:', root?.data?.length || 0);
+
+    if (!root?.data) {
+      console.error('Sağlamoğlu API data is null');
+      return null;
+    }
 
     let hasAltinAlis = 0;
     let hasAltinSatis = 0;
@@ -144,24 +170,28 @@ async function getSaglamogluData() {
           minute: '2-digit'
         });
       }
+      console.log('Has Altın:', { hasAltinAlis, hasAltinSatis });
     }
 
     const usdItem = root.data.find(x => x.id === 8);
     if (usdItem) {
       usdAlis = usdItem.customerBuysAt;
       usdSatis = usdItem.customerSellsAt;
+      console.log('USD:', { usdAlis, usdSatis });
     }
 
     const eurItem = root.data.find(x => x.id === 9);
     if (eurItem) {
       eurAlis = eurItem.customerBuysAt;
       eurSatis = eurItem.customerSellsAt;
+      console.log('EUR:', { eurAlis, eurSatis });
     }
 
     const sarItem = root.data.find(x => x.id === 15);
     if (sarItem) {
       sarAlis = sarItem.customerBuysAt;
       sarSatis = sarItem.customerSellsAt;
+      console.log('SAR:', { sarAlis, sarSatis });
     }
 
     return {
@@ -181,7 +211,6 @@ async function getSaglamogluData() {
   }
 }
 
-// Helper: Verileri Hesapla ve Listeyi Oluştur
 function hesaplaVeListele(
   hasAltinAlis: number,
   hasAltinSatis: number,
@@ -199,6 +228,8 @@ function hesaplaVeListele(
 
   hasAltinAlis = hasAltinAlis + c.hasAltinAlisFarki;
   hasAltinSatis = hasAltinSatis + c.hasAltinSatisFarki;
+
+  console.log('Hesaplanan Has Altın:', { hasAltinAlis, hasAltinSatis });
 
   urunListesi.push({
     cinsi: 'USD/TL',
@@ -292,13 +323,19 @@ function hesaplaVeListele(
     satisFiyati: hasAltinSatis * c.ataTamSatisCarpani
   });
 
+  console.log('Toplam ürün sayısı:', urunListesi.length);
+
   return urunListesi;
 }
 
 export async function GET(request: Request) {
   try {
+    console.log('=== API GET isteği başladı ===');
+
     const now = Date.now();
+
     if (cache && (now - cache.lastUpdate) < CACHE_DURATION) {
+      console.log('Cache kullanılıyor');
       return NextResponse.json({
         data: cache.data,
         kaynak: cache.source,
@@ -306,6 +343,8 @@ export async function GET(request: Request) {
         success: true
       } as ApiResponse);
     }
+
+    console.log('Yeni veri çekiliyor...');
 
     const haremData = await getHaremData();
 
@@ -331,10 +370,11 @@ export async function GET(request: Request) {
       sarSatis = haremData.sarSatis;
       apiTarih = haremData.tarih;
       veriKaynagi = 'Harem Altın';
-    }
-
-    if (hasAltinAlis === 0) {
+      console.log('Harem verisi kullanılıyor');
+    } else {
+      console.log('Harem başarısız, Sağlamoğlu deneniyor...');
       const saglamogluData = await getSaglamogluData();
+
       if (saglamogluData && saglamogluData.hasAltinAlis > 0) {
         hasAltinAlis = saglamogluData.hasAltinAlis;
         hasAltinSatis = saglamogluData.hasAltinSatis;
@@ -346,11 +386,13 @@ export async function GET(request: Request) {
         sarSatis = saglamogluData.sarSatis;
         apiTarih = saglamogluData.tarih;
         veriKaynagi = 'Sağlamoğlu Altın';
+        console.log('Sağlamoğlu verisi kullanılıyor');
       }
     }
 
     if (hasAltinAlis === 0) {
       veriKaynagi = 'Veri Alınamadı';
+      console.error('Her iki API de başarısız!');
     }
 
     const urunListesi = hesaplaVeListele(
@@ -370,6 +412,10 @@ export async function GET(request: Request) {
       source: veriKaynagi,
       lastUpdate: now
     };
+
+    console.log('=== API GET isteği tamamlandı ===');
+    console.log('Kaynak:', veriKaynagi);
+    console.log('Ürün sayısı:', urunListesi.length);
 
     const response: ApiResponse = {
       data: urunListesi,
@@ -395,7 +441,17 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    console.log('=== API POST isteği başladı ===');
+
+    let body: any = {};
+
+    try {
+      body = await request.json();
+      console.log('Request body:', body);
+    } catch (e) {
+      console.log('Body yok veya parse hatası, varsayılan kullanılıyor');
+    }
+
     const carpanlar = body || DEFAULT_CARPANLAR;
 
     const now = Date.now();
@@ -424,10 +480,11 @@ export async function POST(request: Request) {
       sarSatis = haremData.sarSatis;
       apiTarih = haremData.tarih;
       veriKaynagi = 'Harem Altın';
-    }
-
-    if (hasAltinAlis === 0) {
+      console.log('Harem verisi kullanılıyor');
+    } else {
+      console.log('Harem başarısız, Sağlamoğlu deneniyor...');
       const saglamogluData = await getSaglamogluData();
+
       if (saglamogluData && saglamogluData.hasAltinAlis > 0) {
         hasAltinAlis = saglamogluData.hasAltinAlis;
         hasAltinSatis = saglamogluData.hasAltinSatis;
@@ -439,11 +496,13 @@ export async function POST(request: Request) {
         sarSatis = saglamogluData.sarSatis;
         apiTarih = saglamogluData.tarih;
         veriKaynagi = 'Sağlamoğlu Altın';
+        console.log('Sağlamoğlu verisi kullanılıyor');
       }
     }
 
     if (hasAltinAlis === 0) {
       veriKaynagi = 'Veri Alınamadı';
+      console.error('Her iki API de başarısız!');
     }
 
     const urunListesi = hesaplaVeListele(
@@ -463,6 +522,8 @@ export async function POST(request: Request) {
       source: veriKaynagi,
       lastUpdate: now
     };
+
+    console.log('=== API POST isteği tamamlandı ===');
 
     const response: ApiResponse = {
       data: urunListesi,
