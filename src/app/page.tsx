@@ -46,7 +46,10 @@ export default function AltinFiyatlar() {
 
       const result: ApiResponse = await response.json();
 
-      console.log('Frontend: API response:', result);
+      console.log('Frontend: API response type:', typeof result);
+      console.log('Frontend: API response.data type:', typeof result.data);
+      console.log('Frontend: API response.data is array:', Array.isArray(result.data));
+      console.log('Frontend: Full API response:', JSON.stringify(result));
 
       if (result.success && result.data) {
         console.log('Frontend: Veri güncellendi, ürün sayısı:', result.data.length);
@@ -57,7 +60,7 @@ export default function AltinFiyatlar() {
         setKaynak(result.kaynak);
         setSonGuncelleme(result.sonGuncelleme);
       } else {
-        console.error('Frontend: API success false veya data boş:', result);
+        console.error('Frontend: API success true ama data yok:', result);
         setData([]);
       }
     } catch (error) {
@@ -119,7 +122,7 @@ export default function AltinFiyatlar() {
               <small className="text-white">
                 <strong>Kaynak:</strong>{' '}
                 <span className="text-yellow-400" style={{ marginRight: '15px' }}>{kaynak}</span>
-                <strong>Son Güncellenme:</strong>{' '}
+                <strong>Son Güncelleme:</strong>{' '}
                 <span className="text-yellow-400">{sonGuncelleme}</span>
               </small>
             </div>
