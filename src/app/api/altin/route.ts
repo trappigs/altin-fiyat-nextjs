@@ -40,6 +40,14 @@ const DEFAULT_CARPANLAR = {
   suudiSatisArti: 0.20,
 };
 
+function parseFloatSafe(val: string | number | undefined | null, defaultValue: number = 0): number {
+  if (val === undefined || val === null || val === '') {
+    return defaultValue;
+  }
+  const num = typeof val === 'string' ? parseFloat(val.replace(',', '.')) : Number(val);
+  return isNaN(num) ? defaultValue : num;
+}
+
 async function getHaremData() {
   try {
     console.log('Harem API istek gönderiliyor...');
@@ -81,28 +89,30 @@ async function getHaremData() {
     console.log('Harem API tarih:', apiTarih);
 
     if (root.data['ALTIN']) {
-      hasAltinAlis = parseFloat(root.data['ALTIN'].alis) || 0;
-      hasAltinSatis = parseFloat(root.data['ALTIN'].satis) || 0;
+      hasAltinAlis = parseFloatSafe(root.data['ALTIN'].alis);
+      hasAltinSatis = parseFloatSafe(root.data['ALTIN'].satis);
       console.log('Has Altın:', { hasAltinAlis, hasAltinSatis });
     }
 
     if (root.data['USDTRY']) {
-      usdAlis = parseFloat(root.data['USDTRY'].alis) || 0;
-      usdSatis = parseFloat(root.data['USDTRY'].satis) || 0;
+      usdAlis = parseFloatSafe(root.data['USDTRY'].alis);
+      usdSatis = parseFloatSafe(root.data['USDTRY'].satis);
       console.log('USD:', { usdAlis, usdSatis });
     }
 
     if (root.data['EURTRY']) {
-      eurAlis = parseFloat(root.data['EURTRY'].alis) || 0;
-      eurSatis = parseFloat(root.data['EURTRY'].satis) || 0;
+      eurAlis = parseFloatSafe(root.data['EURTRY'].alis);
+      eurSatis = parseFloatSafe(root.data['EURTRY'].satis);
       console.log('EUR:', { eurAlis, eurSatis });
     }
 
     if (root.data['SARTRY']) {
-      sarAlis = parseFloat(root.data['SARTRY'].alis) || 0;
-      sarSatis = parseFloat(root.data['SARTRY'].satis) || 0;
+      sarAlis = parseFloatSafe(root.data['SARTRY'].alis);
+      sarSatis = parseFloatSafe(root.data['SARTRY'].satis);
       console.log('SAR:', { sarAlis, sarSatis });
     }
+
+    console.log('Harem API - Tüm veriler:', { hasAltinAlis, hasAltinSatis, usdAlis, usdSatis, eurAlis, eurSatis, sarAlis, sarSatis });
 
     return {
       hasAltinAlis,
@@ -194,6 +204,8 @@ async function getSaglamogluData() {
       console.log('SAR:', { sarAlis, sarSatis });
     }
 
+    console.log('Sağlamoğlu API - Tüm veriler:', { hasAltinAlis, hasAltinSatis, usdAlis, usdSatis, eurAlis, eurSatis, sarAlis, sarSatis });
+
     return {
       hasAltinAlis,
       hasAltinSatis,
@@ -230,6 +242,7 @@ function hesaplaVeListele(
   hasAltinSatis = hasAltinSatis + c.hasAltinSatisFarki;
 
   console.log('Hesaplanan Has Altın:', { hasAltinAlis, hasAltinSatis });
+  console.log('Hesaplama için inputlar:', { usdAlis, usdSatis, eurAlis, eurSatis, sarAlis, sarSatis });
 
   urunListesi.push({
     cinsi: 'USD/TL',

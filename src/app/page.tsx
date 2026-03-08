@@ -48,14 +48,15 @@ export default function AltinFiyatlar() {
 
       console.log('Frontend: API response:', result);
 
-      if (result.success && result.data) {
+      if (result.success && result.data && Array.isArray(result.data)) {
         console.log('Frontend: Veri güncellendi, ürün sayısı:', result.data.length);
         console.log('Frontend: İlk ürün:', result.data[0]);
         setData(result.data);
         setKaynak(result.kaynak);
         setSonGuncelleme(result.sonGuncelleme);
       } else {
-        console.error('Frontend: API success false veya data boş:', result);
+        console.error('Frontend: API success false, data boş veya array değil:', result);
+        setData([]);
       }
     } catch (error) {
       console.error('Frontend: Veri çekerken hata:', error);
@@ -125,7 +126,7 @@ export default function AltinFiyatlar() {
 
             {loading ? (
               <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-transparent" style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'transparent' }}></div>
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-transparent" style={{ borderColor: 'rgba(255, 255, 255, 0.3)', borderTopColor: 'transparent' }}></div>
                 <p className="mt-4 text-lg">Yükleniyor...</p>
               </div>
             ) : data.length === 0 ? (
@@ -151,7 +152,7 @@ export default function AltinFiyatlar() {
                         }}
                       >
                         <td className="py-3 px-4 text-center" style={{ color: 'black', fontWeight: '600' }}>
-                          {item.cinsi || ''}
+                          {item.cinsi ?? ''}
                         </td>
                         <td
                           className="py-3 px-4 text-center font-medium"
