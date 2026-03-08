@@ -48,14 +48,16 @@ export default function AltinFiyatlar() {
 
       console.log('Frontend: API response:', result);
 
-      if (result.success && result.data && Array.isArray(result.data)) {
+      if (result.success && result.data) {
         console.log('Frontend: Veri güncellendi, ürün sayısı:', result.data.length);
-        console.log('Frontend: İlk ürün:', result.data[0]);
+        if (result.data.length > 0) {
+          console.log('Frontend: İlk ürün:', result.data[0]);
+        }
         setData(result.data);
         setKaynak(result.kaynak);
         setSonGuncelleme(result.sonGuncelleme);
       } else {
-        console.error('Frontend: API success false, data boş veya array değil:', result);
+        console.error('Frontend: API success false veya data boş:', result);
         setData([]);
       }
     } catch (error) {
@@ -75,14 +77,12 @@ export default function AltinFiyatlar() {
 
   const formatPrice = (value: number | null | undefined): string => {
     if (value === null || value === undefined || isNaN(value)) {
-      console.log('Frontend: formatPrice - Invalid value:', value);
       return '0.00';
     }
     const formatted = value.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
-    console.log('Frontend: formatPrice -', value, '->', formatted);
     return formatted;
   };
 
@@ -152,7 +152,7 @@ export default function AltinFiyatlar() {
                         }}
                       >
                         <td className="py-3 px-4 text-center" style={{ color: 'black', fontWeight: '600' }}>
-                          {item.cinsi ?? ''}
+                          {item.cinsi || ''}
                         </td>
                         <td
                           className="py-3 px-4 text-center font-medium"
